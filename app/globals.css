@@ -15,5 +15,5 @@ body {
   min-height: 100vh;
   background: #ffffff;
   color: #111827;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial;
 }

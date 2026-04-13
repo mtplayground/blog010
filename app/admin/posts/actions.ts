@@ -62,3 +62,26 @@ export async function updatePostAction(postId: number, formData: FormData): Prom
   revalidatePath(`/admin/posts/${postId}/edit`);
   redirect("/admin");
 }
+
+export async function deletePostAction(postId: number, formData: FormData): Promise<void> {
+  if (!Number.isInteger(postId) || postId <= 0) {
+    redirect("/admin?error=invalid_post");
+  }
+
+  const confirmationInput = formData.get("confirmation");
+  const confirmation = typeof confirmationInput === "string" ? confirmationInput : "";
+  if (confirmation !== "delete") {
+    redirect(`/admin/posts/${postId}/edit?error=delete_not_confirmed`);
+  }
+
+  try {
+    await prisma.post.delete({
+      where: { id: postId }
+    });
+  } catch {
+    redirect(`/admin/posts/${postId}/edit?error=delete_failed`);
+  }
+
+  revalidatePath("/admin");
+  redirect("/admin");
+}

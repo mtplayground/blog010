@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { updatePostAction } from "@/app/admin/posts/actions";
+import { deletePostAction, updatePostAction } from "@/app/admin/posts/actions";
 import { prisma } from "@/lib/prisma";
 
 type EditPostPageProps = {
@@ -40,9 +40,14 @@ export default async function EditPostPage({ params, searchParams }: EditPostPag
       ? "Title and body are required."
       : error === "save_failed"
         ? "Unable to update the post. Please try again."
+        : error === "delete_not_confirmed"
+          ? "Delete confirmation was not provided."
+          : error === "delete_failed"
+            ? "Unable to delete the post. Please try again."
         : null;
 
   const updateAction = updatePostAction.bind(null, post.id);
+  const deleteAction = deletePostAction.bind(null, post.id);
 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-6">
@@ -104,6 +109,17 @@ export default async function EditPostPage({ params, searchParams }: EditPostPag
             Cancel
           </Link>
         </div>
+      </form>
+
+      <form action={deleteAction} className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <input type="hidden" name="confirmation" value="delete" />
+        <p className="mb-3 text-sm text-red-700">This action permanently deletes this post.</p>
+        <button
+          type="submit"
+          className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+        >
+          Delete Post
+        </button>
       </form>
     </section>
   );

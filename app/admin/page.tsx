@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { deletePostAction } from "@/app/admin/posts/actions";
+import { deletePostAction, togglePostPublishedAction } from "@/app/admin/posts/actions";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -69,6 +69,12 @@ export default async function AdminDashboardPage() {
                   <td className="px-4 py-3 text-sm text-gray-700">{dateFormatter.format(post.updatedAt)}</td>
                   <td className="px-4 py-3 text-right text-sm">
                     <div className="inline-flex items-center gap-3">
+                      <form action={togglePostPublishedAction.bind(null, post.id)} className="inline">
+                        <input type="hidden" name="nextPublished" value={post.published ? "false" : "true"} />
+                        <button type="submit" className="font-medium text-amber-700 hover:text-amber-900">
+                          {post.published ? "Unpublish" : "Publish"}
+                        </button>
+                      </form>
                       <Link href={`/admin/posts/${post.id}/edit`} className="font-medium text-blue-700 hover:text-blue-900">
                         Edit
                       </Link>

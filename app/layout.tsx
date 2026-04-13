@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+
+import PublicShell from "@/components/public-shell";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +16,9 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PublicShell>{children}</PublicShell>
+      </body>
     </html>
   );
 }

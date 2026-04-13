@@ -85,3 +85,32 @@ export async function deletePostAction(postId: number, formData: FormData): Prom
   revalidatePath("/admin");
   redirect("/admin");
 }
+
+export async function togglePostPublishedAction(postId: number, formData: FormData): Promise<void> {
+  if (!Number.isInteger(postId) || postId <= 0) {
+    redirect("/admin?error=invalid_post");
+  }
+
+  const nextPublishedInput = formData.get("nextPublished");
+  const nextPublishedValue = typeof nextPublishedInput === "string" ? nextPublishedInput : "";
+
+  if (nextPublishedValue !== "true" && nextPublishedValue !== "false") {
+    redirect("/admin?error=invalid_publish_state");
+  }
+
+  const nextPublished = nextPublishedValue === "true";
+
+  try {
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        published: nextPublished
+      }
+    });
+  } catch {
+    redirect("/admin?error=publish_toggle_failed");
+  }
+
+  revalidatePath("/admin");
+  redirect("/admin");
+}

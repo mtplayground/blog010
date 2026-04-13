@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -15,13 +16,21 @@ type PostDetailPageProps = {
   };
 };
 
-export default async function PostDetailPage({ params }: PostDetailPageProps) {
-  const postId = Number(params.id);
-  if (!Number.isInteger(postId) || postId <= 0) {
-    notFound();
+function buildExcerpt(body: string, maxLength = 180): string {
+  const normalized = body.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
   }
 
-  const post = await prisma.post.findFirst({
+  return `${normalized.slice(0, maxLength).trimEnd()}...`;
+}
+
+async function getPublishedPostById(postId: number) {
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return null;
+  }
+
+  return prisma.post.findFirst({
     where: {
       id: postId,
       published: true
@@ -33,6 +42,40 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       createdAt: true
     }
   });
+}
+
+export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
+  const postId = Number(params.id);
+  const post = await getPublishedPostById(postId);
+
+  if (!post) {
+    return {
+      title: "Post Not Found",
+      description: "The requested post could not be found."
+    };
+  }
+
+  const description = buildExcerpt(post.body);
+
+  return {
+    title: post.title,
+    description,
+    openGraph: {
+      title: post.title,
+      description,
+      url: `/posts/${post.id}`,
+      images: [
+        {
+          url: "/og-default.png"
+        }
+      ]
+    }
+  };
+}
+
+export default async function PostDetailPage({ params }: PostDetailPageProps) {
+  const postId = Number(params.id);
+  const post = await getPublishedPostById(postId);
 
   if (!post) {
     notFound();

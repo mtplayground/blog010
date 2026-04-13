@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +15,23 @@ function buildExcerpt(body: string, maxLength = 180): string {
   }
 
   return `${normalized.slice(0, maxLength).trimEnd()}...`;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Home",
+    description: "Read the latest published posts on blog010.",
+    openGraph: {
+      title: "blog010",
+      description: "Read the latest published posts on blog010.",
+      url: "/",
+      images: [
+        {
+          url: "/og-default.png"
+        }
+      ]
+    }
+  };
 }
 
 export default async function HomePage() {

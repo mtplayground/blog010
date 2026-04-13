@@ -1,0 +1,84 @@
+Architecture Plan (Issues #1-#18)
+
+1) Module structure and file organization
+- Stack: Next.js App Router + TypeScript + Tailwind + Prisma (SQLite)
+- Suggested structure:
+  - app/
+    - (public)/
+      - layout.tsx                  # public site shell (Issue #14)
+      - page.tsx                    # homepage, published posts (Issue #12)
+      - posts/[slug]/page.tsx       # post detail (Issue #13)
+    - admin/
+      - login/page.tsx              # login UI (Issue #4)
+      - layout.tsx                  # protected admin shell + logout (Issue #6)
+      - page.tsx                    # dashboard listing (Issue #7)
+      - posts/new/page.tsx          # create post form (Issue #8)
+      - posts/[id]/edit/page.tsx    # edit post form (Issue #9)
+    - sitemap.ts                    # sitemap generation (Issue #16)
+    - robots.ts                     # robots generation (Issue #16)
+    - not-found.tsx                 # 404 page (Issue #17)
+    - error.tsx                     # app error page (Issue #17)
+    - globals.css
+  - app/actions/
+    - auth.ts                       # login/logout actions
+    - posts.ts                      # create/edit/delete/publish actions
+  - lib/
+    - prisma.ts                     # singleton Prisma client
+    - auth.ts                       # session cookie utils + password verify helper
+    - env.ts                        # runtime env validation
+    - metadata.ts                   # reusable metadata helpers (Issue #15)
+  - prisma/
+    - schema.prisma                 # Post model + indexes (Issue #2)
+    - migrations/
+  - middleware.ts                   # admin route protection (Issue #5)
+  - components/
+    - admin/
+    - public/
+    - ui/
+  - tests/e2e/
+    - smoke.spec.ts                 # smoke path test (Issue #18)
+  - Dockerfile, docker-compose.yml, .env.example (Issue #3)
+
+2) Shared types
+- Prisma Post as source of truth.
+- Define UI-safe projection type in lib/types.ts, e.g.:
+  - PostListItem: id, title, slug, excerpt, published, publishedAt, updatedAt
+  - PostDetail: title, slug, content, publishedAt, metadata fields
+- Server action payloads validated with zod schemas in lib/validators.ts.
+
+3) Dependency graph (high-level)
+- Foundation:
+  - #1 (Next/TS/Tailwind) -> required by everything.
+  - #2 (Prisma/Post) -> required by all post CRUD and public listing/detail.
+  - #3 (Docker/env) -> can start early; finalized after core app routes exist.
+- Auth/Admin platform:
+  - #4 (login) -> #5 (middleware) -> #6 (admin layout/logout) -> #7 (dashboard).
+- Post management:
+  - #7 enables navigation/visibility for #8/#9/#10/#11.
+  - #8 create, #9 edit, #10 delete, #11 publish toggle all depend on #2 and auth chain.
+- Public site:
+  - #12 homepage and #13 detail depend on #2 and #11 published status.
+  - #14 layout wraps #12/#13.
+- SEO/reliability:
+  - #15 metadata depends on #12/#13 route finalization.
+  - #16 sitemap/robots depends on stable route map and published post queries.
+  - #17 error/not-found depends on finalized route structure.
+- Validation:
+  - #18 e2e + Docker verification should run last across full stack.
+
+4) Key design decisions
+- Auth approach: minimal admin password auth via HttpOnly signed cookie session (single-admin scope).
+- Security:
+  - middleware protects /admin except /admin/login.
+  - server actions re-check auth; never rely on client-only controls.
+- Data model (initial): Post { id, title, slug(unique), excerpt?, content, published, publishedAt?, createdAt, updatedAt }.
+- Slug policy: normalized unique slug generated from title with collision handling.
+- Rendering strategy:
+  - public pages statically cached with revalidation + invalidation after publish/edit.
+  - admin pages dynamic/no-store for freshest state.
+- Metadata strategy: centralized helper for title/description/OG/Twitter fields with sensible defaults.
+- Testing strategy:
+  - smoke test covers login, create draft, publish, verify public visibility, and containerized startup.
+
+5) Recommended implementation order
+#1 -> #2 -> #3 -> #4 -> #5 -> #6 -> #7 -> #8 -> #9 -> #10 -> #11 -> #12 -> #13 -> #14 -> #15 -> #16 -> #17 -> #18
